@@ -72,12 +72,10 @@
 		B340390821F12345008A635B /* Comp371 */ = {
 			isa = PBXGroup;
 			children = (
-				B340392121F135AB008A635B /* vertex.shader */,
-				B340392021F12DF4008A635B /* cube.obj */,
+				B39FEA4C21F24C3C000C18C9 /* headers */,
+				B39FEA4B21F24C24000C18C9 /* geometry */,
+				B39FEA4A21F24C05000C18C9 /* shaders */,
 				B340391E21F12B1F008A635B /* Main.cpp */,
-				B340391721F12B0B008A635B /* fragment.shader */,
-				B340391921F12B0B008A635B /* OBJloader.h */,
-				B340391A21F12B0B008A635B /* shaderloader.h */,
 			);
 			path = Comp371;
 			sourceTree = "<group>";
@@ -90,6 +88,32 @@
 				B340391121F12420008A635B /* OpenGL.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B39FEA4A21F24C05000C18C9 /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				B340392121F135AB008A635B /* vertex.shader */,
+				B340391721F12B0B008A635B /* fragment.shader */,
+			);
+			path = shaders;
+			sourceTree = "<group>";
+		};
+		B39FEA4B21F24C24000C18C9 /* geometry */ = {
+			isa = PBXGroup;
+			children = (
+				B340392021F12DF4008A635B /* cube.obj */,
+			);
+			path = geometry;
+			sourceTree = "<group>";
+		};
+		B39FEA4C21F24C3C000C18C9 /* headers */ = {
+			isa = PBXGroup;
+			children = (
+				B340391921F12B0B008A635B /* OBJloader.h */,
+				B340391A21F12B0B008A635B /* shaderloader.h */,
+			);
+			path = headers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -11,19 +11,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "OBJloader.h"  //include the object loader
-#include "shaderloader.h"
+#include "headers/OBJloader.h"  //include the object loader
+#include "headers/shaderloader.h"
 using namespace std;
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
-
-// Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-	std::cout << key << std::endl;	
-}
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -56,6 +50,13 @@ int init() {
 	}
 	return 0;
 }
+
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    std::cout << key << std::endl;
+}
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
@@ -76,13 +77,13 @@ int main()
 	// Build and compile our shader program
 	// Vertex shader
 
-	GLuint shader = loadSHADER("vertex.shader", "fragment.shader");
+	GLuint shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
 	glUseProgram(shader);
 
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> UVs;
-	loadOBJ("cube.obj", vertices, normals, UVs); //read the vertices from the cube.obj file
+	loadOBJ("geometry/cube.obj", vertices, normals, UVs); //read the vertices from the cube.obj file
 
 	GLuint VAO, VBO;
 	glGenVertexArrays(1, &VAO);
