@@ -26,11 +26,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 int init() {
-	std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
+	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
 	glfwInit();
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -76,13 +76,13 @@ int main()
 	// Build and compile our shader program
 	// Vertex shader
 
-	GLuint shader = loadSHADER("/Users/allanpichardo/Documents/Dev/comp371/Comp371/Comp371/vertex.shader", "/Users/allanpichardo/Documents/Dev/comp371/Comp371/Comp371/fragment.shader");
+	GLuint shader = loadSHADER("vertex.shader", "fragment.shader");
 	glUseProgram(shader);
 
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> UVs;
-	loadOBJ("/Users/allanpichardo/Documents/Dev/comp371/Comp371/Comp371/cube.obj", vertices, normals, UVs); //read the vertices from the cube.obj file
+	loadOBJ("cube.obj", vertices, normals, UVs); //read the vertices from the cube.obj file
 
 	GLuint VAO, VBO;
 	glGenVertexArrays(1, &VAO);
