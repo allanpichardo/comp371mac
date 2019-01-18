@@ -65,18 +65,8 @@ int main()
 	// Set the required callback functions
 	glfwSetKeyCallback(window, key_callback);
 
-	// Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
-	glewExperimental = GL_TRUE;
-	// Initialize GLEW to setup the OpenGL Function pointers
-	if (glewInit() != GLEW_OK)
-	{
-		std::cout << "Failed to initialize GLEW" << std::endl;
-		return -1;
-	}
-
 	// Build and compile our shader program
 	// Vertex shader
-
 	GLuint shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
 	glUseProgram(shader);
 
