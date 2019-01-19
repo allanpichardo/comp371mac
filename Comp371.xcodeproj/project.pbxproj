@@ -36,6 +36,7 @@
 		B340391E21F12B1F008A635B /* Main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
 		B340392021F12DF4008A635B /* cube.obj */ = {isa = PBXFileReference; lastKnownFileType = text; path = cube.obj; sourceTree = "<group>"; };
 		B340392121F135AB008A635B /* vertex.shader */ = {isa = PBXFileReference; lastKnownFileType = text; path = vertex.shader; sourceTree = "<group>"; };
+		B39FEA4D21F24FEF000C18C9 /* cat.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cat.obj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +103,7 @@
 		B39FEA4B21F24C24000C18C9 /* geometry */ = {
 			isa = PBXGroup;
 			children = (
+				B39FEA4D21F24FEF000C18C9 /* cat.obj */,
 				B340392021F12DF4008A635B /* cube.obj */,
 			);
 			path = geometry;

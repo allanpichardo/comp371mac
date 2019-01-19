@@ -15,9 +15,15 @@
 #include "headers/shaderloader.h"
 using namespace std;
 
+const float MOVEMENT_INTERVAL = 0.1f;
+
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
+
+// Globals
+float scale = 1.0f;
+glm::vec3 translation = glm::vec3(0.0f,0.0f,0.0f);
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -52,9 +58,81 @@ int init() {
 }
 
 // Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
+    switch(key) {
+        case GLFW_KEY_O:
+            scale *= 1.1; //scale up by 10%
+            break;
+        case GLFW_KEY_P:
+            scale /= 1.1; //scale down by 10%
+            break;
+        case GLFW_KEY_I:
+            //+y axis
+            translation.y += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_K:
+            //-y axis
+            translation.y -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_J:
+            //+x
+            translation.x += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_L:
+            //-x
+            translation.x -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_PAGE_UP:
+            //+z
+            translation.z += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_PAGE_DOWN:
+            //-z
+            translation.z -= MOVEMENT_INTERVAL;
+            break;
+    }
     std::cout << key << std::endl;
+}
+
+// Called when a mouse button is pressed.
+//From https://www.glfw.org/docs/latest/input_guide.html
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT){
+        if(action == GLFW_PRESS) {
+            //todo: move camera into/out of scene here
+        } else {
+            //button released
+        }
+    }
+}
+
+// Called when the mouse is moved
+// From https://www.glfw.org/docs/latest/input_guide.html
+static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    //update the camera
+}
+
+void setScale(GLuint program) {
+    int location = glGetUniformLocation(program, "u_scale");
+    if(location == -1) {
+        std::cout << "Couldn't find uniform u_scale" << std::endl;
+        return;
+    }
+    
+    glUniform1f(location, scale);
+}
+
+void setTranslation(GLuint program) {
+    int location = glGetUniformLocation(program, "u_translation");
+    if(location == -1) {
+        std::cout << "Couldn't find uniform u_translation" << std::endl;
+        return;
+    }
+    
+    glUniform3fv(location, 1, &translation[0]);
 }
 
 // The MAIN function, from here we start the application and run the game loop
@@ -64,6 +142,8 @@ int main()
 		return EXIT_FAILURE;
 	// Set the required callback functions
 	glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 
 	// Build and compile our shader program
 	// Vertex shader
@@ -73,29 +153,26 @@ int main()
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> UVs;
-	loadOBJ("geometry/cube.obj", vertices, normals, UVs); //read the vertices from the cube.obj file
+	loadOBJ("geometry/cat.obj", vertices, normals, UVs); //read the vertices from the cat object file
 
+    //Generate the vertex array and vertex buffer
 	GLuint VAO, VBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-	GLuint vertices_VBO;
-
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &vertices_VBO);
 
 	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
 	glBindVertexArray(VAO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertices_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices.front(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
+	glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the VBO, keep it bound to this VAO
 
+    //setScale(shader, scale);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -105,11 +182,13 @@ int main()
 
 		// Render
 		// Clear the colorbuffer
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+        setScale(shader);
+        setTranslation(shader);
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 		glBindVertexArray(0);
 
 		// Swap the screen buffers
