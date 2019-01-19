@@ -14,6 +14,7 @@
 #include "headers/OBJloader.h"  //include the object loader
 #include "headers/shaderloader.h"
 using namespace std;
+using namespace glm;
 
 const float MOVEMENT_INTERVAL = 0.1f;
 
@@ -22,8 +23,9 @@ const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
 
 // Globals
-float scale = 1.0f;
-glm::vec3 translation = glm::vec3(0.0f,0.0f,0.0f);
+vec3 scaleVector(1.0f, 1.0f, 1.0f);
+vec3 translationVector(0.0f, 0.0f, 0.0f);
+vec3 rotationVector(0.0f, 0.0f, 0.0f);
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -57,39 +59,61 @@ int init() {
 	return 0;
 }
 
+void setProjection(GLuint program) {
+    int location = glGetUniformLocation(program, "u_projection");
+    if(location == -1) {
+        std::cout << "Couldn't find uniform u_projection" << std::endl;
+        return;
+    }
+    
+    mat4 perspective = mat4(1.0f);
+    
+    mat4 translationMatrix = translate(mat4(1.0f), translationVector);
+    mat4 rotationX = rotate(mat4(1.0f), rotationVector.x, vec3(1.0f,0.0f,0.0f));
+    mat4 rotationY = rotate(mat4(1.0f), rotationVector.y, vec3(0.0f,1.0f,0.0f));
+    mat4 rotationZ = rotate(mat4(1.0f), rotationVector.z, vec3(0.0f,0.0f,1.0f));
+    
+    mat4 scaledMatrix = scale(mat4(1.0f), scaleVector);
+    
+//    mat4 projection = perspective * translationMatrix * rotationX * rotationY * rotationZ * scaledMatrix;
+    mat4 projection = perspective * translationMatrix * scaledMatrix;
+    
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(projection));
+}
+
 // Is called whenever a key is pressed/released via GLFW
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     switch(key) {
         case GLFW_KEY_O:
-            scale *= 1.1; //scale up by 10%
+            scaleVector *= 1.1; //scale up by 10%
             break;
         case GLFW_KEY_P:
-            scale /= 1.1; //scale down by 10%
+            scaleVector /= 1.1; //scale down by 10%
             break;
         case GLFW_KEY_I:
             //+y axis
-            translation.y += MOVEMENT_INTERVAL;
+            translationVector.y += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_K:
             //-y axis
-            translation.y -= MOVEMENT_INTERVAL;
+            translationVector.y -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_J:
             //+x
-            translation.x += MOVEMENT_INTERVAL;
+            translationVector.x += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_L:
             //-x
-            translation.x -= MOVEMENT_INTERVAL;
+            translationVector.x -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_UP:
             //+z
-            translation.z += MOVEMENT_INTERVAL;
+            translationVector.z += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_DOWN:
             //-z
-            translation.z -= MOVEMENT_INTERVAL;
+            translationVector.z -= MOVEMENT_INTERVAL;
             break;
     }
     std::cout << key << std::endl;
@@ -113,26 +137,6 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
     //update the camera
-}
-
-void setScale(GLuint program) {
-    int location = glGetUniformLocation(program, "u_scale");
-    if(location == -1) {
-        std::cout << "Couldn't find uniform u_scale" << std::endl;
-        return;
-    }
-    
-    glUniform1f(location, scale);
-}
-
-void setTranslation(GLuint program) {
-    int location = glGetUniformLocation(program, "u_translation");
-    if(location == -1) {
-        std::cout << "Couldn't find uniform u_translation" << std::endl;
-        return;
-    }
-    
-    glUniform3fv(location, 1, &translation[0]);
 }
 
 // The MAIN function, from here we start the application and run the game loop
@@ -186,8 +190,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(VAO);
-        setScale(shader);
-        setTranslation(shader);
+        setProjection(shader);
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 		glBindVertexArray(0);
 
