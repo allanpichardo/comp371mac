@@ -13,8 +13,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "headers/OBJloader.h"  //include the object loader
 #include "headers/shaderloader.h"
-using namespace std;
-using namespace glm;
 
 const float MOVEMENT_INTERVAL = 0.1f;
 
@@ -22,10 +20,11 @@ const float MOVEMENT_INTERVAL = 0.1f;
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
 
-// Globals
-vec3 scaleVector(1.0f, 1.0f, 1.0f);
-vec3 translationVector(0.0f, 0.0f, 0.0f);
-vec3 rotationVector(0.0f, 0.0f, 0.0f);
+GLuint shader;
+
+glm::vec3 translation;
+glm::vec3 rotation(0.0f, 0.0f, 0.0f);
+glm::vec3 scale(1.0f);
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -59,64 +58,66 @@ int init() {
 	return 0;
 }
 
-void setProjection(GLuint program) {
-    int location = glGetUniformLocation(program, "u_projection");
+void updateMVP(glm::vec3 translationVector, glm::vec3 rotationVector, glm::vec3 scaleVector) {
+    int location = glGetUniformLocation(shader, "u_projection");
     if(location == -1) {
         std::cout << "Couldn't find uniform u_projection" << std::endl;
         return;
     }
     
-    mat4 perspective = mat4(1.0f);
+    glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
     
-    mat4 translationMatrix = translate(mat4(1.0f), translationVector);
-    mat4 rotationX = rotate(mat4(1.0f), rotationVector.x, vec3(1.0f,0.0f,0.0f));
-    mat4 rotationY = rotate(mat4(1.0f), rotationVector.y, vec3(0.0f,1.0f,0.0f));
-    mat4 rotationZ = rotate(mat4(1.0f), rotationVector.z, vec3(0.0f,0.0f,1.0f));
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translationVector);
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationVector.x, glm::vec3(1.0f,0.0f,0.0f));
+    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.y, glm::vec3(0.0f,1.0f,0.0f));
+    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.z, glm::vec3(0.0f,0.0f,1.0f));
+    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleVector);
+    glm::mat4 model = translationMatrix * rotationMatrix * scaleMatrix;
     
-    mat4 scaledMatrix = scale(mat4(1.0f), scaleVector);
+    glm::mat4 view = glm::lookAt(glm::vec3(0,0,60), glm::vec3(0,0,0), glm::vec3(0,1,0));
     
-//    mat4 projection = perspective * translationMatrix * rotationX * rotationY * rotationZ * scaledMatrix;
-    mat4 projection = perspective * translationMatrix * scaledMatrix;
-    
-    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(projection));
+    glm::mat4 mvp = projection * view * model;
+    glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
 }
 
-// Is called whenever a key is pressed/released via GLFW
+// is called whenever a key is pressed/released via GLFW
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     switch(key) {
         case GLFW_KEY_O:
-            scaleVector *= 1.1; //scale up by 10%
+            scale *= 1.1; //scale up by 10%
             break;
         case GLFW_KEY_P:
-            scaleVector /= 1.1; //scale down by 10%
+            scale *= 0.9; //scale down by 10%
             break;
         case GLFW_KEY_I:
             //+y axis
-            translationVector.y += MOVEMENT_INTERVAL;
+            translation.y += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_K:
             //-y axis
-            translationVector.y -= MOVEMENT_INTERVAL;
+            translation.y -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_J:
             //+x
-            translationVector.x += MOVEMENT_INTERVAL;
+            translation.x += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_L:
             //-x
-            translationVector.x -= MOVEMENT_INTERVAL;
+            translation.x -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_UP:
             //+z
-            translationVector.z += MOVEMENT_INTERVAL;
+            translation.z += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_DOWN:
             //-z
-            translationVector.z -= MOVEMENT_INTERVAL;
+            translation.z -= MOVEMENT_INTERVAL;
             break;
     }
+    
     std::cout << key << std::endl;
+    updateMVP(translation, rotation, scale);
 }
 
 // Called when a mouse button is pressed.
@@ -151,7 +152,7 @@ int main()
 
 	// Build and compile our shader program
 	// Vertex shader
-	GLuint shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
+    shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
 	glUseProgram(shader);
 
 	std::vector<glm::vec3> vertices;
@@ -176,7 +177,7 @@ int main()
 
 	glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the VBO, keep it bound to this VAO
 
-    //setScale(shader, scale);
+    updateMVP(translation, rotation, scale);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -190,7 +191,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(VAO);
-        setProjection(shader);
+        //updateMVP(translation, rotation, scale);
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 		glBindVertexArray(0);
 
