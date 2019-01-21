@@ -14,7 +14,7 @@
 #include "headers/OBJloader.h"  //include the object loader
 #include "headers/shaderloader.h"
 
-const float MOVEMENT_INTERVAL = 0.1f;
+const float MOVEMENT_INTERVAL = 1.0f;
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 800;
@@ -22,9 +22,14 @@ GLFWwindow *window;
 
 GLuint shader;
 
+bool isMouseClicked = false;
+float lastY;
+
 glm::vec3 translation;
-glm::vec3 rotation(0.0f, 0.0f, 0.0f);
+glm::vec3 rotation;
 glm::vec3 scale(1.0f);
+glm::vec3 cameraTranslation = glm::vec3(0.0f, 0.0f, 60.0f);
+glm::vec3 cameraTarget;
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -65,16 +70,20 @@ void updateMVP(glm::vec3 translationVector, glm::vec3 rotationVector, glm::vec3 
         return;
     }
     
+    glm::vec3 xAxis = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 yAxis = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 zAxis = glm::vec3(0.0f, 0.0f, 1.0f);
+    
     glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
     
     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translationVector);
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationVector.x, glm::vec3(1.0f,0.0f,0.0f));
-    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.y, glm::vec3(0.0f,1.0f,0.0f));
-    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.z, glm::vec3(0.0f,0.0f,1.0f));
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationVector.x, xAxis);
+    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.y, yAxis);
+    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.z, zAxis);
     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleVector);
     glm::mat4 model = translationMatrix * rotationMatrix * scaleMatrix;
     
-    glm::mat4 view = glm::lookAt(glm::vec3(0,0,60), glm::vec3(0,0,0), glm::vec3(0,1,0));
+    glm::mat4 view = glm::lookAt(cameraTranslation, cameraTarget, yAxis);
     
     glm::mat4 mvp = projection * view * model;
     glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
@@ -91,28 +100,46 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             scale *= 0.9; //scale down by 10%
             break;
         case GLFW_KEY_I:
-            //+y axis
             translation.y += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_K:
-            //-y axis
             translation.y -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_J:
-            //+x
             translation.x += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_L:
-            //-x
             translation.x -= MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_UP:
-            //+z
             translation.z += MOVEMENT_INTERVAL;
             break;
         case GLFW_KEY_PAGE_DOWN:
-            //-z
             translation.z -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_W:
+            cameraTranslation.z -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_S:
+            cameraTranslation.z += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_A:
+            cameraTranslation.x -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_D:
+            cameraTranslation.x += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_LEFT:
+            cameraTarget.x -= MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_RIGHT:
+            cameraTarget.x += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_UP:
+            cameraTarget.y += MOVEMENT_INTERVAL;
+            break;
+        case GLFW_KEY_DOWN:
+            cameraTarget.y -= MOVEMENT_INTERVAL;
             break;
     }
     
@@ -124,20 +151,24 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //From https://www.glfw.org/docs/latest/input_guide.html
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT){
-        if(action == GLFW_PRESS) {
-            //todo: move camera into/out of scene here
-        } else {
-            //button released
-        }
-    }
+    isMouseClicked = button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS;
 }
 
 // Called when the mouse is moved
 // From https://www.glfw.org/docs/latest/input_guide.html
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    //update the camera
+    if(isMouseClicked) {
+        if(ypos - lastY < 0) {
+            cameraTranslation.z -= MOVEMENT_INTERVAL;
+        }else {
+            cameraTranslation.z += MOVEMENT_INTERVAL;
+        }
+    }
+    
+    lastY = ypos;
+    
+    updateMVP(translation, rotation, scale);
 }
 
 // The MAIN function, from here we start the application and run the game loop
