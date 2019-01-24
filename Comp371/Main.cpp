@@ -19,6 +19,11 @@ using namespace std;
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
 
+//Camera
+glm::vec3 cam_pos = glm::vec3(0,2,-5);
+glm::vec3 cam_dir = glm::vec3(0, 0, 1);
+glm::vec3 cam_up = glm::vec3(0,1,0);
+
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
 	glfwInit();
@@ -55,6 +60,21 @@ int init() {
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     std::cout << key << std::endl;
+    if(key == GLFW_KEY_ESCAPE) {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+    if(key == GLFW_KEY_W) {
+        cam_pos += cam_dir;
+    }
+    if(key == GLFW_KEY_S) {
+        cam_pos -= cam_dir;
+    }
+    if(key == GLFW_KEY_A) {
+        cam_pos += glm::cross(cam_up, cam_dir);
+    }
+    if(key == GLFW_KEY_D) {
+        cam_pos -= glm::cross(cam_up, cam_dir);
+    }
 }
 
 // The MAIN function, from here we start the application and run the game loop
@@ -96,10 +116,30 @@ int main()
 
 	glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
 
+    glm::mat4 modl_matrix = glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0,1,0));
+    glm::mat4 view_matrix = glm::lookAt(cam_pos, cam_pos + cam_dir, cam_up);
+    glm::mat4 proj_matrix = glm::perspective(45.0f, 1.0f, 0.1f, 100.0f);
+    
+    GLuint mm_loc = glGetUniformLocation(shader, "mm");
+    GLuint vm_loc = glGetUniformLocation(shader, "vm");
+    GLuint pm_loc = glGetUniformLocation(shader, "pm");
+    
+    glUniformMatrix4fv(mm_loc, 1, GL_FALSE, &modl_matrix[0][0]);
+    glUniformMatrix4fv(vm_loc, 1, GL_FALSE, &view_matrix[0][0]);
+    glUniformMatrix4fv(pm_loc, 1, GL_FALSE, &proj_matrix[0][0]);
 
 	// Game loop
+    int counter = 0;
 	while (!glfwWindowShouldClose(window))
 	{
+        counter = ++counter;
+        view_matrix = glm::lookAt(cam_pos, cam_pos + cam_dir, cam_up);
+        glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), (float)counter/180, glm::vec3(0,1,0));
+        glm::mat4 translator = glm::translate(glm::mat4(1.0f), glm::vec3(2,0,0));
+        glm::mat4 scalar = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f,1,1));
+        modl_matrix = translator * rotator * scalar;
+        glUniformMatrix4fv(mm_loc, 1, GL_FALSE, &modl_matrix[0][0]);
+        glUniformMatrix4fv(vm_loc, 1, GL_FALSE, &view_matrix[0][0]);
 		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
 
@@ -109,7 +149,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 		glBindVertexArray(0);
 
 		// Swap the screen buffers
