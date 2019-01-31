@@ -1,5 +1,9 @@
-//example skeleton code 2019 winter comp371
-//modified from http://learnopengl.com/
+/**
+ Allan Pichardo
+ #40051123
+ COMP 371
+ Assignment 1
+ */
 
 
 #include <GL/glew.h>	// include GL Extension Wrangler
@@ -9,10 +13,10 @@
 #include <string>
 #include <fstream>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "headers/OBJloader.h"  //include the object loader
 #include "headers/shaderloader.h"
+#include "headers/camera.h"
+#include "headers/model.h"
 
 const float MOVEMENT_INTERVAL = 1.0f;
 
@@ -25,11 +29,8 @@ GLuint shader;
 bool isMouseClicked = false;
 float lastY;
 
-glm::vec3 translation;
-glm::vec3 rotation;
-glm::vec3 scale(1.0f);
-glm::vec3 cameraTranslation = glm::vec3(0.0f, 0.0f, 60.0f);
-glm::vec3 cameraTarget;
+Camera* camera;
+Model* model;
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -63,112 +64,81 @@ int init() {
 	return 0;
 }
 
-void updateMVP(glm::vec3 translationVector, glm::vec3 rotationVector, glm::vec3 scaleVector) {
-    int location = glGetUniformLocation(shader, "u_projection");
-    if(location == -1) {
-        std::cout << "Couldn't find uniform u_projection" << std::endl;
-        return;
-    }
-    
-    glm::vec3 xAxis = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 yAxis = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 zAxis = glm::vec3(0.0f, 0.0f, 1.0f);
-    
-    glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
-    
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translationVector);
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationVector.x, xAxis);
-    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.y, yAxis);
-    rotationMatrix = glm::rotate(rotationMatrix, rotationVector.z, zAxis);
-    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleVector);
-    glm::mat4 model = translationMatrix * rotationMatrix * scaleMatrix;
-    
-    glm::mat4 view = glm::lookAt(cameraTranslation, cameraTarget, yAxis);
-    
-    glm::mat4 mvp = projection * view * model;
-    glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
-}
-
 // is called whenever a key is pressed/released via GLFW
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     switch(key) {
         case GLFW_KEY_O:
-            scale *= 1.1; //scale up by 10%
+            model->scaleRelative(1.1);
             break;
         case GLFW_KEY_P:
-            scale *= 0.9; //scale down by 10%
+            model->scaleRelative(0.9);
             break;
         case GLFW_KEY_I:
-            translation.y += MOVEMENT_INTERVAL;
+            model->translateYBy(MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_K:
-            translation.y -= MOVEMENT_INTERVAL;
+            model->translateYBy(-MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_J:
-            translation.x += MOVEMENT_INTERVAL;
+            model->translateXBy(MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_L:
-            translation.x -= MOVEMENT_INTERVAL;
+            model->translateXBy(-MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_PAGE_UP:
-            translation.z += MOVEMENT_INTERVAL;
+            model->translateZBy(MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_PAGE_DOWN:
-            translation.z -= MOVEMENT_INTERVAL;
+            model->translateZBy(-MOVEMENT_INTERVAL);
             break;
         case GLFW_KEY_W:
-            cameraTranslation.z -= MOVEMENT_INTERVAL;
+            camera->panForward();
             break;
         case GLFW_KEY_S:
-            cameraTranslation.z += MOVEMENT_INTERVAL;
-            break;
-        case GLFW_KEY_A:
-            cameraTranslation.x -= MOVEMENT_INTERVAL;
+            camera->panBackward();
             break;
         case GLFW_KEY_D:
-            cameraTranslation.x += MOVEMENT_INTERVAL;
+            camera->panLeft();
+            break;
+        case GLFW_KEY_A:
+            camera->panRight();
             break;
         case GLFW_KEY_LEFT:
-            cameraTarget.x -= MOVEMENT_INTERVAL;
+            camera->rotateLeft();
             break;
         case GLFW_KEY_RIGHT:
-            cameraTarget.x += MOVEMENT_INTERVAL;
+            camera->rotateRight();
             break;
         case GLFW_KEY_UP:
-            cameraTarget.y += MOVEMENT_INTERVAL;
+            camera->rotateUp();
             break;
         case GLFW_KEY_DOWN:
-            cameraTarget.y -= MOVEMENT_INTERVAL;
+            camera->rotateDown();
             break;
     }
     
     std::cout << key << std::endl;
-    updateMVP(translation, rotation, scale);
 }
 
 // Called when a mouse button is pressed.
-//From https://www.glfw.org/docs/latest/input_guide.html
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     isMouseClicked = button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS;
 }
 
-// Called when the mouse is moved
-// From https://www.glfw.org/docs/latest/input_guide.html
+// Called when mouse is moved
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if(isMouseClicked) {
         if(ypos - lastY < 0) {
-            cameraTranslation.z -= MOVEMENT_INTERVAL;
+            camera->panBackward();
         }else {
-            cameraTranslation.z += MOVEMENT_INTERVAL;
+            camera->panForward();
         }
     }
     
     lastY = ypos;
-    
-    updateMVP(translation, rotation, scale);
 }
 
 // The MAIN function, from here we start the application and run the game loop
@@ -176,39 +146,31 @@ int main()
 {
 	if (init() != 0)
 		return EXIT_FAILURE;
-	// Set the required callback functions
+	
+    //Callbacks
 	glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
-	// Build and compile our shader program
-	// Vertex shader
+    //Load shader
     shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
 	glUseProgram(shader);
 
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec2> UVs;
-	loadOBJ("geometry/cat.obj", vertices, normals, UVs); //read the vertices from the cat object file
-
-    //Generate the vertex array and vertex buffer
-	GLuint VAO, VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices.front(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the VBO, keep it bound to this VAO
-
-    updateMVP(translation, rotation, scale);
+    //Get locations for M V P uniforms
+    int viewLocation = glGetUniformLocation(shader, "view");
+    int modelLocation = glGetUniformLocation(shader, "model");
+    int projectionLocation = glGetUniformLocation(shader, "projection");
+    
+    /*
+     The Model and Camera classes encapsulate all matrix transformations
+     that apply either to the model or to the view. When their matrix is
+     altered, the object automatically updates the corresponding uniform */
+    model = new Model(modelLocation, "geometry/cat.obj");
+    camera = new Camera(viewLocation, glm::vec3(0.0f,0.0f,-10.0f), glm::vec3(0.0f,0.0f,1.0f), glm::vec3(0.0f,1.0f,0.0f));
+    
+    //Set projection for scene
+    glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -221,14 +183,18 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glBindVertexArray(VAO);
-        //updateMVP(translation, rotation, scale);
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+		glBindVertexArray(model->getVAO());
+		glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount());
 		glBindVertexArray(0);
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
+    // Deallocate the model and camera pointers
+    delete model;
+    model = NULL;
+    delete camera;
+    camera = NULL;
 
 	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
