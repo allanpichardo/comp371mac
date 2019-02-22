@@ -153,7 +153,7 @@ int main()
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
     //Load shader
-    shader = loadSHADER("shaders/vertex.shader", "shaders/fragment.shader");
+    shader = loadSHADER("../shaders/vertex.shader", "../shaders/fragment.shader");
 	glUseProgram(shader);
 
     //Get locations for M V P uniforms
@@ -165,7 +165,7 @@ int main()
      The Model and Camera classes encapsulate all matrix transformations
      that apply either to the model or to the view. When their matrix is
      altered, the object automatically updates the corresponding uniform */
-    model = new Model(modelLocation, "geometry/cat.obj");
+    model = new Model(modelLocation, "../geometry/cat.obj");
     camera = new Camera(viewLocation, glm::vec3(0.0f,0.0f,-10.0f), glm::vec3(0.0f,0.0f,1.0f), glm::vec3(0.0f,1.0f,0.0f));
     
     //Set projection for scene
