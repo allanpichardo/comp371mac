@@ -92,6 +92,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_PAGE_DOWN:
             model->translateZBy(-MOVEMENT_INTERVAL);
             break;
+        case GLFW_KEY_B:
+            model->rotateXBy(MOVEMENT_INTERVAL);
+            break;
+        case GLFW_KEY_N:
+            model->rotateYBy(MOVEMENT_INTERVAL);
+            break;
+        case GLFW_KEY_E:
+            model->rotateZBy(MOVEMENT_INTERVAL);
+            break;
         case GLFW_KEY_W:
             camera->panForward();
             break;
