@@ -2,12 +2,12 @@
  Allan Pichardo
  #40051123
  COMP 371
- Assignment 1
+ Assignment 2
  */
 
 
-#include <GL/glew.h>	// include GL Extension Wrangler
-#include <GLFW/glfw3.h>	// include GLFW helper library
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -17,6 +17,7 @@
 #include "headers/shaderloader.h"
 #include "headers/camera.h"
 #include "headers/model.h"
+#include "headers/light.h"
 
 const float MOVEMENT_INTERVAL = 1.0f;
 
@@ -24,13 +25,12 @@ const float MOVEMENT_INTERVAL = 1.0f;
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
 
-GLuint shader;
-
 bool isMouseClicked = false;
 float lastY;
 
 Camera* camera;
 Model* model;
+Light* light;
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -43,7 +43,7 @@ int init() {
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 	//WINDOW
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Assignment 1", nullptr, nullptr);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Assignment 2 - Allan Pichardo", nullptr, nullptr);
 
 	if (nullptr == window)
 	{
@@ -64,7 +64,6 @@ int init() {
 	return 0;
 }
 
-// is called whenever a key is pressed/released via GLFW
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     switch(key) {
@@ -126,11 +125,39 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             camera->rotateDown();
             break;
     }
-    
+    if(action == GLFW_PRESS) {
+        switch(key) {
+            case GLFW_KEY_1:
+                model->toggleRed(model->getColorMask().x == 0.0f);
+                break;
+            case GLFW_KEY_2:
+                model->toggleGreen(model->getColorMask().y == 0.0f);
+                break;
+            case GLFW_KEY_3:
+                model->toggleBlue(model->getColorMask().z == 0.0f);
+                break;
+            case GLFW_KEY_4:
+                model->toggleRed(true);
+                model->toggleGreen(true);
+                model->toggleBlue(true);
+                break;
+            case GLFW_KEY_5:
+                light->setShadingMode(light->getShadingMode() == ShadingMode::gouraud ? ShadingMode::phrong : ShadingMode::gouraud);
+                break;
+            case GLFW_KEY_6:
+                light->setEnabled(!light->isEnabled());
+                break;
+            case GLFW_KEY_M:
+                light->setShadingMode(light->getShadingMode() == ShadingMode::normal ? ShadingMode::gouraud : ShadingMode::normal);
+                break;
+            case GLFW_KEY_G:
+                model->setColorMask(glm::vec3(0.2989f, 0.587f, 0.114f));
+                break;
+        }
+    }
     std::cout << key << std::endl;
 }
 
-// Called when a mouse button is pressed.
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     isMouseClicked = button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS;
@@ -150,36 +177,62 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     lastY = ypos;
 }
 
+static void clearErrors() {
+    while(glGetError() != GL_NO_ERROR);
+}
+
+static bool logGlErrors() {
+    while(GLenum error = glGetError()) {
+        std::cout << "OpenGL Error: " << error << std::endl;
+        return false;
+    }
+    return true;
+}
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
 	if (init() != 0)
 		return EXIT_FAILURE;
-	
+
+    glEnable(GL_DEPTH_TEST);
+
     //Callbacks
 	glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
     //Load shader
-    shader = loadSHADER("../shaders/vertex.shader", "../shaders/fragment.shader");
+    GLuint shader = loadSHADER("../shaders/vertex.shader", "../shaders/fragment.shader");
 	glUseProgram(shader);
 
     //Get locations for M V P uniforms
     int viewLocation = glGetUniformLocation(shader, "view");
-    int modelLocation = glGetUniformLocation(shader, "model");
     int projectionLocation = glGetUniformLocation(shader, "projection");
-    
+
     /*
      The Model and Camera classes encapsulate all matrix transformations
      that apply either to the model or to the view. When their matrix is
      altered, the object automatically updates the corresponding uniform */
-    model = new Model(modelLocation, "../geometry/cat.obj");
-    camera = new Camera(viewLocation, glm::vec3(0.0f,0.0f,-10.0f), glm::vec3(0.0f,0.0f,1.0f), glm::vec3(0.0f,1.0f,0.0f));
+    model = new Model(shader, "../geometry/heracles.obj");
+
+    Material material;
+    material.color = glm::vec3(1, 1, 1);
+    material.ambient = glm::vec3(0.25f);
+    material.diffuse = glm::vec3(0.75f);
+    material.specular = glm::vec3(1.0f);
+
+    model->setMaterial(material);
+
+    camera = new Camera(viewLocation, glm::vec3(0.0f,5.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
     
     //Set projection for scene
     glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
+
+    light = new Light(shader, glm::vec3(0.0f, 20.0f, 5.0f), glm::vec3(0.8f, 0.8f, 0.8f));
+
+    glUniform3fv(glGetUniformLocation(shader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -190,10 +243,14 @@ int main()
 		// Render
 		// Clear the colorbuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glBindVertexArray(model->getVAO());
-		glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount());
+		clearErrors();
+
+		model->draw();
+
+        logGlErrors();
+
 		glBindVertexArray(0);
 
 		// Swap the screen buffers
@@ -204,6 +261,8 @@ int main()
     model = NULL;
     delete camera;
     camera = NULL;
+    delete light;
+    light = NULL;
 
 	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();

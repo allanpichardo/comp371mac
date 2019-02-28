@@ -17,6 +17,7 @@ class Camera {
     int uniformLocation = -1;
     float currentPitch = 0.0f;
     float currentYaw = 0.0f;
+    float movementAmount = 0.3f;
     glm::vec3 position;
     glm::vec3 direction;
     glm::vec3 up;
@@ -28,6 +29,7 @@ class Camera {
     
 public:
     Camera(int uniformLocation, glm::vec3 position, glm::vec3 direction, glm::vec3 up);
+    glm::vec3 getPosition();
     void panLeft();
     void panRight();
     void panForward();

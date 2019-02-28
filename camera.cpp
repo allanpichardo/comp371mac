@@ -2,7 +2,7 @@
  Allan Pichardo
  #40051123
  COMP 371
- Assignment 1
+ Assignment 2
  
  This abstraction manipulates the view matrix through
  translation, and rotation
@@ -24,6 +24,10 @@ Camera::Camera(int uniformLocation, glm::vec3 position, glm::vec3 direction, glm
     updateUniform();
 }
 
+glm::vec3 Camera::getPosition() {
+    return position;
+}
+
 void Camera::updateUniform() {
     cameraMatrix = glm::lookAt(position, position + direction, up);
     glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &cameraMatrix[0][0]);
@@ -42,7 +46,7 @@ void Camera::rotate(float pitch, float yaw) {
 }
 
 void Camera::panLeft(){
-    move(-1.0f * glm::cross(up, direction));
+    move(-movementAmount * glm::cross(up, direction));
 }
 
 void Camera::panRight(){
@@ -54,21 +58,21 @@ void Camera::panForward(){
 }
 
 void Camera::panBackward(){
-    move(-1.0f * direction);
+    move(-movementAmount * direction);
 }
 
 void Camera::rotateLeft(){
-    rotate(currentPitch, 1.0f);
+    rotate(currentPitch, movementAmount);
 }
 
 void Camera::rotateRight(){
-    rotate(currentPitch, -1.0f);
+    rotate(currentPitch, -movementAmount);
 }
 
 void Camera::rotateUp(){
-    rotate(1.0f, currentYaw);
+    rotate(movementAmount, currentYaw);
 }
 
 void Camera::rotateDown(){
-    rotate(-1.0f, currentYaw);
+    rotate(-movementAmount, currentYaw);
 }

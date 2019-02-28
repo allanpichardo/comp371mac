@@ -1,8 +1,62 @@
 #version 330 core
 
-out vec4 color;
+struct Light {
+    int shadingMode;
+    bool is_enabled;
+    vec3 color;
+    vec3 position;
+};
+
+struct Material {
+    vec3 color;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+
+out vec4 result;
+
+uniform int shadingType;
+uniform Material material;
+uniform Light light;
+uniform vec3 view_position;
+
+in vec3 fragment_position;
+in vec3 fragment_normal;
+in vec3 gouraud; //color computed in vertex shader
 
 void main()
 {
-    color = vec4(0.5f, 0.7f, 0.4f, 1.0f);
-} 
+
+    if(light.shadingMode == 0) {
+        //gouraud shading enabled
+        result = vec4(gouraud, 1.0f);
+    }else if(light.shadingMode == 1) {
+        //phrong shading enabled
+
+        //Ambient
+        vec3 ambient = material.ambient * light.color;
+
+        //Diffuse
+        vec3 light_direction = normalize(light.position - fragment_position);
+        float diffuse_strength = max(dot(normalize(fragment_normal), light_direction), 0.0f);
+        vec3 diffuse = (material.diffuse * diffuse_strength) * light.color;
+
+        //Specular
+        vec3 view_direction = normalize(view_position - fragment_position);
+        vec3 reflect_light_direction = reflect(-light_direction, normalize(fragment_normal));
+        float specular_strength = pow(max(dot(reflect_light_direction, view_direction), 0.0f), material.shininess);
+        vec3 specular = (material.specular * specular_strength) * light.color;
+
+        vec3 phrong = light.is_enabled ? (specular + diffuse + ambient) : ambient;
+
+        vec3 color = phrong * material.color;
+
+        result = vec4(color, 1.0f);
+    }else if(light.shadingMode == 2) {
+        //normal as color
+        result = vec4(fragment_normal, 1.0f);
+    }
+
+}

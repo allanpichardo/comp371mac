@@ -121,7 +121,6 @@ Temporary Items
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -148,3 +147,4 @@ Temporary Items
 *.app
 
 /bin/
+!/geometry/cat.obj
