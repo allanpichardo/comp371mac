@@ -153,6 +153,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             case GLFW_KEY_G:
                 model->setColorMask(glm::vec3(0.2989f, 0.587f, 0.114f));
                 break;
+            case GLFW_KEY_F1:
+                enableShadowMap = false;
+                break;
+            case GLFW_KEY_F2:
+                enableShadowMap = true;
+                break;
         }
     }
     std::cout << key << std::endl;
@@ -243,7 +249,6 @@ int main()
     Light light4 = Light(shader, "light4", glm::vec3(0.0f, 0.0f, 25.0f), glm::vec3(0.05f, 0.05f, 0.05f));
 
     Light smLight = Light(shader, "sm_light", glm::vec3(0.0f, 20.0f, 10.0f), glm::vec3(0.8f, 0.2f, 0.2f));
-    smLight.setEnabled(false);
 
     glUniform3fv(glGetUniformLocation(shader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
 
@@ -253,18 +258,18 @@ int main()
         glfwPollEvents();
         clearErrors();
 
+        glUniform1i(glGetUniformLocation(shader, "is_depth_map"), enableShadowMap);
+
         if(enableShadowMap) {
             /*
              * Render from light's perspective
              */
-            glUniform1i(glGetUniformLocation(shader, "is_depth_map"), 1);
             smLight.renderToDepthMap(models);
         }
 
         /*
          * Render from camera's perspective
          */
-        glUniform1i(glGetUniformLocation(shader, "is_depth_map"), 0);
         glViewport(0, 0, WIDTH, HEIGHT);
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

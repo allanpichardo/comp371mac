@@ -29,15 +29,14 @@ uniform vec3 view_position;
 
 out vec3 fragment_position;
 out vec3 fragment_normal;
+out vec4 fragment_lightspace_position;
 
 void main()
 {
     fragment_normal = mat3(model) * normals;
     fragment_position =  mat3(model) * position;
 
-    if(is_shadow_map) {
-        gl_Position = sm_light.transformation * model * vec4(position, 1.0f);
-    } else {
-        gl_Position = projection * view * model * vec4(position, 1.0f);
-    }
+    fragment_lightspace_position = sm_light.transformation * model * vec4(position, 1.0f);
+
+    gl_Position = projection * view * model * vec4(position, 1.0f);
 }
