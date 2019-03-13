@@ -24,7 +24,7 @@ Camera::Camera(int shader, float aspectRatio, glm::vec3 position, glm::vec3 dire
     this->currentYaw = 0.0f;
 
     int projectionLocation = glGetUniformLocation(shader, "projection");
-    glm::mat4 projection = glm::perspective(90.0f, aspectRatio, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(90.0f, aspectRatio, 0.1f, 500.0f);
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
     
     updateUniform();

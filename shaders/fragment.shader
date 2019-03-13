@@ -17,17 +17,24 @@ struct Material {
 
 out vec4 result;
 
-uniform int shadingType;
+//The shadow-mapped light
+uniform Light sm_light;
+
+//Not shadow-mapped lights
+uniform Light light1;
+uniform Light light2;
+uniform Light light3;
+uniform Light light4;
+
 uniform Material material;
-uniform Light light;
 uniform vec3 view_position;
 
 in vec3 fragment_position;
 in vec3 fragment_normal;
 in vec3 gouraud; //color computed in vertex shader
 
-void main()
-{
+//functions
+vec3 calculatePhrongModel(in Light light, in Material material) {
     //Ambient
     vec3 ambient = material.ambient * light.color;
 
@@ -45,7 +52,11 @@ void main()
     vec3 phrong = light.is_enabled ? (specular + diffuse + ambient) : ambient;
 
     vec3 color = phrong * material.color;
+    return color;
+}
 
+void main()
+{
+    vec3 color = calculatePhrongModel(light1, material) + calculatePhrongModel(light2, material) + calculatePhrongModel(light3, material) + calculatePhrongModel(light4, material);
     result = vec4(color, 1.0f);
-
 }

@@ -64,13 +64,13 @@ void Light::createDepthMap() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Light::renderToDepthMap(std::vector<Model> &models) {
+void Light::renderToDepthMap(std::vector<Model*> &models) {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
     for(int i = 0; i < models.size(); i++) {
-        models[i].draw();
+        models[i]->draw();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

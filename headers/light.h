@@ -44,7 +44,7 @@ public:
     bool isEnabled() {return enabled;};
     ShadingMode getShadingMode();
     void setShadingMode(ShadingMode shadingMode);
-    void renderToDepthMap(std::vector<Model> &models);
+    void renderToDepthMap(std::vector<Model*> &models);
 };
 
 #endif //GRAPHICS_LIGHT_H

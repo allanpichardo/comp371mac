@@ -28,7 +28,7 @@ class Model {
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> UVs;
     glm::vec3 translation;
-    glm::vec3 rotation = glm::vec3(glm::radians(-90.0f), 0.0f, glm::radians(-45.0f));
+    glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
     glm::mat4 modelMatrix = glm::mat4(1.0f);
     glm::vec3 colorMask = glm::vec3(1.0f);

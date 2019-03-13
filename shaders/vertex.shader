@@ -20,6 +20,7 @@ layout (location = 0) in vec3 position;
 layout(location = 1) in vec3 normals;
 
 uniform Light sm_light;
+uniform bool is_shadow_map;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -34,5 +35,9 @@ void main()
     fragment_normal = mat3(model) * normals;
     fragment_position =  mat3(model) * position;
 
-    gl_Position = projection * view * model * vec4(position, 1.0f);
+    if(is_shadow_map) {
+        gl_Position = sm_light.transformation * model * vec4(position, 1.0f);
+    } else {
+        gl_Position = projection * view * model * vec4(position, 1.0f);
+    }
 }

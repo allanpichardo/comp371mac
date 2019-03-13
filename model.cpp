@@ -22,7 +22,7 @@
 
 Model::Model(int shader, const char* filePath) {
     this->shader = shader;
-    
+
     loadOBJ(filePath, indices, vertices, normals, UVs);
 
     //Generate the vertex array and vertex buffer
@@ -62,6 +62,12 @@ void Model::updateUniform() {
     
     modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
     glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+
+    glUniform3fv(glGetUniformLocation(shader, "material.color"), 1, &material.color[0]);
+    glUniform3fv(glGetUniformLocation(shader, "material.ambient"), 1, &material.ambient[0]);
+    glUniform3fv(glGetUniformLocation(shader, "material.diffuse"), 1, &material.diffuse[0]);
+    glUniform3fv(glGetUniformLocation(shader, "material.specular"), 1, &material.specular[0]);
+    glUniform1f(glGetUniformLocation(shader, "material.shininess"), material.shininess);
 }
 
 void Model::scaleRelative(float ratio) {
@@ -120,6 +126,7 @@ int Model::getIndexCount() {
 }
 
 void Model::draw() {
+    updateUniform();
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
@@ -131,11 +138,7 @@ void Model::updateColors() {
 
 void Model::setMaterial(Material material) {
     this->material = material;
-    glUniform3fv(glGetUniformLocation(shader, "material.color"), 1, &material.color[0]);
-    glUniform3fv(glGetUniformLocation(shader, "material.ambient"), 1, &material.ambient[0]);
-    glUniform3fv(glGetUniformLocation(shader, "material.diffuse"), 1, &material.diffuse[0]);
-    glUniform3fv(glGetUniformLocation(shader, "material.specular"), 1, &material.specular[0]);
-    glUniform1f(glGetUniformLocation(shader, "material.shininess"), material.shininess);
+    updateUniform();
 }
 
 void Model::toggleRed(bool on) {

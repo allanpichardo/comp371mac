@@ -25,6 +25,7 @@ const float MOVEMENT_INTERVAL = 1.0f;
 const GLuint WIDTH = 800, HEIGHT = 800;
 GLFWwindow *window;
 
+bool enableShadowMap = false;
 bool isMouseClicked = false;
 float lastY;
 
@@ -212,6 +213,8 @@ int main()
      that apply either to the model or to the view. When their matrix is
      altered, the object automatically updates the corresponding uniform */
     model = new Model(shader, "../geometry/heracles.obj");
+    model->rotateXBy(-90.0f);
+    model->rotateZBy(-45.0f);
     Material material;
     material.color = glm::vec3(1, 1, 1);
     material.ambient = glm::vec3(0.25f);
@@ -219,17 +222,28 @@ int main()
     material.specular = glm::vec3(1.0f);
     model->setMaterial(material);
 
-    camera = new Camera(shader, (float)(WIDTH/HEIGHT), glm::vec3(0.0f,5.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
-
     /*
-     * at position (0.0, 20.0, 10.0) and color (0.8, 0.2, 0.2).
+     * A simple plane for the shadows to fall on
      */
+    Model* plane = new Model(shader, "../geometry/floor.obj");
+    plane->setMaterial(material);
+    plane->scaleRelative(20.0f);
+    plane->translateYBy(-10.0f);
+    plane->translateXBy(100.0f);
+
+    vector<Model*> models;
+    models.push_back(model);
+    models.push_back(plane);
+
+    camera = new Camera(shader, (float)(WIDTH/HEIGHT), glm::vec3(0.0f,0.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
+
     Light light1 = Light(shader, "light1", glm::vec3(10.0f, 15.0f, 5.0f), glm::vec3(0.2f, 0.05f, 0.05f));
     Light light2 = Light(shader, "light2", glm::vec3(-10.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.2f, 0.05f));
     Light light3 = Light(shader, "light3", glm::vec3(0.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.05f, 0.2f));
     Light light4 = Light(shader, "light4", glm::vec3(0.0f, 0.0f, 25.0f), glm::vec3(0.05f, 0.05f, 0.05f));
 
     Light smLight = Light(shader, "sm_light", glm::vec3(0.0f, 20.0f, 10.0f), glm::vec3(0.8f, 0.2f, 0.2f));
+    smLight.setEnabled(false);
 
     glUniform3fv(glGetUniformLocation(shader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
 
@@ -237,16 +251,27 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
         glfwPollEvents();
+        clearErrors();
 
+        if(enableShadowMap) {
+            /*
+             * Render from light's perspective
+             */
+            glUniform1i(glGetUniformLocation(shader, "is_depth_map"), 1);
+            smLight.renderToDepthMap(models);
+        }
 
-
+        /*
+         * Render from camera's perspective
+         */
+        glUniform1i(glGetUniformLocation(shader, "is_depth_map"), 0);
         glViewport(0, 0, WIDTH, HEIGHT);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		clearErrors();
-
-		model->draw();
+		for(int i = 0; i < models.size(); i++) {
+		    models[i]->draw();
+		}
 
         logGlErrors();
 
@@ -258,6 +283,8 @@ int main()
     // Deallocate the model and camera pointers
     delete model;
     model = NULL;
+    delete plane;
+    plane = NULL;
     delete camera;
     camera = NULL;
 
