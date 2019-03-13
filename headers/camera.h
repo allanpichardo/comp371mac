@@ -28,7 +28,7 @@ class Camera {
     void rotate(float pitch, float yaw);
     
 public:
-    Camera(int uniformLocation, glm::vec3 position, glm::vec3 direction, glm::vec3 up);
+    Camera(int shader, float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up);
     glm::vec3 getPosition();
     void panLeft();
     void panRight();

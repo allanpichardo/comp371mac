@@ -13,13 +13,19 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-Camera::Camera(int uniformLocation, glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
-    this->uniformLocation = uniformLocation;
+Camera::Camera(int shader, float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
+    int viewLocation = glGetUniformLocation(shader, "view");
+
+    this->uniformLocation = viewLocation;
     this->position = position;
     this->direction = direction;
     this->up = up;
     this->currentPitch = 0.0f;
     this->currentYaw = 0.0f;
+
+    int projectionLocation = glGetUniformLocation(shader, "projection");
+    glm::mat4 projection = glm::perspective(90.0f, aspectRatio, 0.1f, 100.0f);
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
     
     updateUniform();
 }

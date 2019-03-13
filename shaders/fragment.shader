@@ -1,10 +1,10 @@
 #version 330 core
 
 struct Light {
-    int shadingMode;
     bool is_enabled;
     vec3 color;
     vec3 position;
+    mat4 transformation;
 };
 
 struct Material {
@@ -28,35 +28,24 @@ in vec3 gouraud; //color computed in vertex shader
 
 void main()
 {
+    //Ambient
+    vec3 ambient = material.ambient * light.color;
 
-    if(light.shadingMode == 0) {
-        //gouraud shading enabled
-        result = vec4(gouraud, 1.0f);
-    }else if(light.shadingMode == 1) {
-        //phrong shading enabled
+    //Diffuse
+    vec3 light_direction = normalize(light.position - fragment_position);
+    float diffuse_strength = max(dot(normalize(fragment_normal), light_direction), 0.0f);
+    vec3 diffuse = (material.diffuse * diffuse_strength) * light.color;
 
-        //Ambient
-        vec3 ambient = material.ambient * light.color;
+    //Specular
+    vec3 view_direction = normalize(view_position - fragment_position);
+    vec3 reflect_light_direction = reflect(-light_direction, normalize(fragment_normal));
+    float specular_strength = pow(max(dot(reflect_light_direction, view_direction), 0.0f), material.shininess);
+    vec3 specular = (material.specular * specular_strength) * light.color;
 
-        //Diffuse
-        vec3 light_direction = normalize(light.position - fragment_position);
-        float diffuse_strength = max(dot(normalize(fragment_normal), light_direction), 0.0f);
-        vec3 diffuse = (material.diffuse * diffuse_strength) * light.color;
+    vec3 phrong = light.is_enabled ? (specular + diffuse + ambient) : ambient;
 
-        //Specular
-        vec3 view_direction = normalize(view_position - fragment_position);
-        vec3 reflect_light_direction = reflect(-light_direction, normalize(fragment_normal));
-        float specular_strength = pow(max(dot(reflect_light_direction, view_direction), 0.0f), material.shininess);
-        vec3 specular = (material.specular * specular_strength) * light.color;
+    vec3 color = phrong * material.color;
 
-        vec3 phrong = light.is_enabled ? (specular + diffuse + ambient) : ambient;
-
-        vec3 color = phrong * material.color;
-
-        result = vec4(color, 1.0f);
-    }else if(light.shadingMode == 2) {
-        //normal as color
-        result = vec4(fragment_normal, 1.0f);
-    }
+    result = vec4(color, 1.0f);
 
 }

@@ -30,7 +30,6 @@ float lastY;
 
 Camera* camera;
 Model* model;
-Light* light;
 
 int init() {
 	std::cout << "Starting GLFW context, OpenGL 4.1" << std::endl;
@@ -142,13 +141,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
                 model->toggleBlue(true);
                 break;
             case GLFW_KEY_5:
-                light->setShadingMode(light->getShadingMode() == ShadingMode::gouraud ? ShadingMode::phrong : ShadingMode::gouraud);
+                //light->setShadingMode(light->getShadingMode() == ShadingMode::gouraud ? ShadingMode::phrong : ShadingMode::gouraud);
                 break;
             case GLFW_KEY_6:
-                light->setEnabled(!light->isEnabled());
+                //light->setEnabled(!light->isEnabled());
                 break;
             case GLFW_KEY_M:
-                light->setShadingMode(light->getShadingMode() == ShadingMode::normal ? ShadingMode::gouraud : ShadingMode::normal);
+                //light->setShadingMode(light->getShadingMode() == ShadingMode::normal ? ShadingMode::gouraud : ShadingMode::normal);
                 break;
             case GLFW_KEY_G:
                 model->setColorMask(glm::vec3(0.2989f, 0.587f, 0.114f));
@@ -207,41 +206,41 @@ int main()
 	glUseProgram(shader);
 
     //Get locations for M V P uniforms
-    int viewLocation = glGetUniformLocation(shader, "view");
-    int projectionLocation = glGetUniformLocation(shader, "projection");
 
     /*
      The Model and Camera classes encapsulate all matrix transformations
      that apply either to the model or to the view. When their matrix is
      altered, the object automatically updates the corresponding uniform */
     model = new Model(shader, "../geometry/heracles.obj");
-
     Material material;
     material.color = glm::vec3(1, 1, 1);
     material.ambient = glm::vec3(0.25f);
     material.diffuse = glm::vec3(0.75f);
     material.specular = glm::vec3(1.0f);
-
     model->setMaterial(material);
 
-    camera = new Camera(viewLocation, glm::vec3(0.0f,5.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
-    
-    //Set projection for scene
-    glm::mat4 projection = glm::perspective(90.0f, (float)(WIDTH/HEIGHT), 0.1f, 100.0f);
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
+    camera = new Camera(shader, (float)(WIDTH/HEIGHT), glm::vec3(0.0f,5.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
 
-    light = new Light(shader, glm::vec3(0.0f, 20.0f, 5.0f), glm::vec3(0.8f, 0.8f, 0.8f));
+    /*
+     * at position (0.0, 20.0, 10.0) and color (0.8, 0.2, 0.2).
+     */
+    Light light1 = Light(shader, "light1", glm::vec3(10.0f, 15.0f, 5.0f), glm::vec3(0.2f, 0.05f, 0.05f));
+    Light light2 = Light(shader, "light2", glm::vec3(-10.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.2f, 0.05f));
+    Light light3 = Light(shader, "light3", glm::vec3(0.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.05f, 0.2f));
+    Light light4 = Light(shader, "light4", glm::vec3(0.0f, 0.0f, 25.0f), glm::vec3(0.05f, 0.05f, 0.05f));
+
+    Light smLight = Light(shader, "sm_light", glm::vec3(0.0f, 20.0f, 10.0f), glm::vec3(0.8f, 0.2f, 0.2f));
 
     glUniform3fv(glGetUniformLocation(shader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
-		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
-		glfwPollEvents();
+        glfwPollEvents();
 
-		// Render
-		// Clear the colorbuffer
+
+
+        glViewport(0, 0, WIDTH, HEIGHT);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -261,8 +260,6 @@ int main()
     model = NULL;
     delete camera;
     camera = NULL;
-    delete light;
-    light = NULL;
 
 	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
