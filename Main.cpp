@@ -279,9 +279,9 @@ int main()
             glUseProgram(shadowShader);
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glCullFace(GL_FRONT);
+            glDisable( GL_CULL_FACE );
             smLight.renderToDepthMap(shadowShader, models);
-            glCullFace(GL_BACK);
+            glEnable( GL_CULL_FACE );
         }
 
         /*
