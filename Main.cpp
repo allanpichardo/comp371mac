@@ -209,8 +209,10 @@ int main()
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
     //Load shader
-    GLuint shader = loadSHADER("../shaders/vertex.shader", "../shaders/fragment.shader");
-	glUseProgram(shader);
+    GLuint mainShader = loadSHADER("../shaders/vertex.shader", "../shaders/fragment.shader");
+    GLuint shadowShader = loadSHADER("../shaders/shadowvertex.shader", "../shaders/shadowfragment.shader");
+
+    glUseProgram(mainShader);
 
     //Get locations for M V P uniforms
 
@@ -218,9 +220,10 @@ int main()
      The Model and Camera classes encapsulate all matrix transformations
      that apply either to the model or to the view. When their matrix is
      altered, the object automatically updates the corresponding uniform */
-    model = new Model(shader, "../geometry/heracles.obj");
+    model = new Model("../geometry/heracles.obj");
     model->rotateXBy(-90.0f);
     model->rotateZBy(-45.0f);
+    model->translateYBy(-50.0f);
     Material material;
     material.color = glm::vec3(1, 1, 1);
     material.ambient = glm::vec3(0.25f);
@@ -231,26 +234,37 @@ int main()
     /*
      * A simple plane for the shadows to fall on
      */
-    Model* plane = new Model(shader, "../geometry/floor.obj");
+    Model* plane = new Model("../geometry/plane.obj");
     plane->setMaterial(material);
-    plane->scaleRelative(20.0f);
-    plane->translateYBy(-10.0f);
-    plane->translateXBy(100.0f);
+    plane->setScale(glm::vec3(3.0f, 3.0f, 1.0f));
+    plane->rotateXBy(-90.0f);
+    plane->translateYBy(-100.0f);
 
     vector<Model*> models;
     models.push_back(model);
     models.push_back(plane);
 
-    camera = new Camera(shader, (float)(WIDTH/HEIGHT), glm::vec3(0.0f,0.0f,50.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
+    camera = new Camera((float)(WIDTH/HEIGHT), glm::vec3(0.0f,0.0f,100.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f));
 
-    Light light1 = Light(shader, "light1", glm::vec3(10.0f, 15.0f, 5.0f), glm::vec3(0.2f, 0.05f, 0.05f));
-    Light light2 = Light(shader, "light2", glm::vec3(-10.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.2f, 0.05f));
-    Light light3 = Light(shader, "light3", glm::vec3(0.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.05f, 0.2f));
-    Light light4 = Light(shader, "light4", glm::vec3(0.0f, 0.0f, 25.0f), glm::vec3(0.05f, 0.05f, 0.05f));
+    Light light1 = Light("light1", glm::vec3(10.0f, 15.0f, 5.0f), glm::vec3(0.2f, 0.05f, 0.05f));
+    Light light2 = Light("light2", glm::vec3(-10.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.2f, 0.05f));
+    Light light3 = Light("light3", glm::vec3(0.0f, 15.0f, 5.0f), glm::vec3(0.05f, 0.05f, 0.2f));
+    Light light4 = Light("light4", glm::vec3(0.0f, 0.0f, 25.0f), glm::vec3(0.05f, 0.05f, 0.05f));
 
-    Light smLight = Light(shader, "sm_light", glm::vec3(0.0f, 20.0f, 10.0f), glm::vec3(0.8f, 0.2f, 0.2f));
+    Light smLight = Light("sm_light", glm::vec3(0.0f, 40.0f, 10.0f), glm::vec3(0.8f, 0.2f, 0.2f));
+    smLight.makeSpotlight(glm::normalize(glm::vec3(0.0f) - smLight.getPosition()), 70.0f);
+    smLight.createDepthMap();
 
-    glUniform3fv(glGetUniformLocation(shader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
+    vector<Light> lights;
+    lights.push_back(light1);
+    lights.push_back(light2);
+    lights.push_back(light3);
+    lights.push_back(light4);
+    lights.push_back(smLight);
+
+    glm::vec3 clearColor = glm::vec3(0.0f);
+
+    glUniform3fv(glGetUniformLocation(mainShader, "view_position"), 1, glm::value_ptr(camera->getPosition()));
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -258,23 +272,39 @@ int main()
         glfwPollEvents();
         clearErrors();
 
-        glUniform1i(glGetUniformLocation(shader, "is_depth_map"), enableShadowMap);
-
         if(enableShadowMap) {
             /*
              * Render from light's perspective
              */
-            smLight.renderToDepthMap(models);
+            glUseProgram(shadowShader);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glCullFace(GL_FRONT);
+            smLight.renderToDepthMap(shadowShader, models);
+            glCullFace(GL_BACK);
         }
 
         /*
          * Render from camera's perspective
          */
+        glUseProgram(mainShader);
+
+        camera->updateUniform(mainShader);
+        for(int i = 0; i < lights.size(); i++) {
+            lights[i].updateUniform(mainShader);
+        }
+
+        glUniform1i(glGetUniformLocation(mainShader, "is_depth_map"), enableShadowMap);
         glViewport(0, 0, WIDTH, HEIGHT);
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, smLight.getDepthMap());
+        glUniform1i(glGetUniformLocation(mainShader, "shadowMap"), 0);
+
 		for(int i = 0; i < models.size(); i++) {
+		    models[i]->updateUniform(mainShader);
 		    models[i]->draw();
 		}
 

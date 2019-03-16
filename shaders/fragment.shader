@@ -1,10 +1,13 @@
 #version 330 core
 
 struct Light {
+    int lightMode;
     bool is_enabled;
     vec3 color;
     vec3 position;
     mat4 transformation;
+    vec3 direction;
+    float cutOff;
 };
 
 struct Material {
@@ -50,7 +53,7 @@ vec3 calculatePhrongModel(in Light light, in Material material, float shadow) {
     float specular_strength = pow(max(dot(reflect_light_direction, view_direction), 0.0f), material.shininess);
     vec3 specular = (material.specular * specular_strength) * light.color;
 
-    vec3 phrong = light.is_enabled ? ((specular + diffuse)* (1.0f - shadow) + ambient) : ambient;
+    vec3 phrong = light.is_enabled ? ((specular + diffuse) * (1.0f - shadow)) + ambient : ambient;
 
     vec3 color = phrong * material.color;
     return color;
@@ -67,7 +70,12 @@ float calculateShadow(in vec4 fragPosLightSpace)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+    float bias = max(0.005 * (1.0 - dot(fragment_normal, normalize(sm_light.position - fragment_position))), 0.0005);
+//    float bias = 0.0005;
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
 
     return shadow;
 }
@@ -80,7 +88,15 @@ void main()
     }
     else {
         float shadow = calculateShadow(fragment_lightspace_position);
-        vec3 color = calculatePhrongModel(sm_light, material, shadow);
-        result = vec4(color, 1.0f);
+        float theta = dot(normalize(sm_light.position - fragment_position), normalize(-sm_light.direction));
+
+        if(theta > sm_light.cutOff)
+        {
+            vec3 color = calculatePhrongModel(sm_light, material, shadow);
+            result = vec4(color, 1.0f);
+        }else {
+            result = vec4(material.ambient * material.diffuse * sm_light.color, 1.0);
+        }
+
     }
 }

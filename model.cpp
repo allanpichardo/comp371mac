@@ -20,9 +20,7 @@
 #include "headers/OBJloader.h"
 #include "headers/model.h"
 
-Model::Model(int shader, const char* filePath) {
-    this->shader = shader;
-
+Model::Model(const char* filePath) {
     loadOBJ(filePath, indices, vertices, normals, UVs);
 
     //Generate the vertex array and vertex buffer
@@ -48,10 +46,9 @@ Model::Model(int shader, const char* filePath) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glBindVertexArray(0); // Unbind vao (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the vbo, keep it bound to this vao
-    updateUniform();
 }
 
-void Model::updateUniform() {
+void Model::updateUniform(int shader) {
     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
     
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -63,7 +60,8 @@ void Model::updateUniform() {
     modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
     glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
 
-    glUniform3fv(glGetUniformLocation(shader, "material.color"), 1, &material.color[0]);
+    glm::vec3 masked = material.color * colorMask;
+    glUniform3fv(glGetUniformLocation(shader, "material.color"), 1, &masked[0]);
     glUniform3fv(glGetUniformLocation(shader, "material.ambient"), 1, &material.ambient[0]);
     glUniform3fv(glGetUniformLocation(shader, "material.diffuse"), 1, &material.diffuse[0]);
     glUniform3fv(glGetUniformLocation(shader, "material.specular"), 1, &material.specular[0]);
@@ -72,37 +70,30 @@ void Model::updateUniform() {
 
 void Model::scaleRelative(float ratio) {
     scale *= ratio;
-    updateUniform();
 }
 
 void Model::translateXBy(float amount) {
     translation.x += amount;
-    updateUniform();
 }
 
 void Model::translateYBy(float amount) {
     translation.y += amount;
-    updateUniform();
 }
 
 void Model::translateZBy(float amount) {
     translation.z += amount;
-    updateUniform();
 }
 
 void Model::rotateXBy(float amount) {
     rotation.x += glm::radians(amount);
-    updateUniform();
 }
 
 void Model::rotateYBy(float amount) {
     rotation.y += glm::radians(amount);
-    updateUniform();
 }
 
 void Model::rotateZBy(float amount) {
     rotation.z += glm::radians(amount);
-    updateUniform();
 }
 
 GLuint Model::getVAO() {
@@ -126,37 +117,34 @@ int Model::getIndexCount() {
 }
 
 void Model::draw() {
-    updateUniform();
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
-void Model::updateColors() {
-    glm::vec3 masked = material.color * colorMask;
-    glUniform3fv(glGetUniformLocation(shader, "material.color"), 1, &masked[0]);
-}
-
 void Model::setMaterial(Material material) {
     this->material = material;
-    updateUniform();
 }
 
 void Model::toggleRed(bool on) {
     colorMask.x = on ? 1.0f : 0.0f;
-    updateColors();
 }
 
 void Model::toggleGreen(bool on) {
     colorMask.y = on ? 1.0f : 0.0f;
-    updateColors();
 }
 
 void Model::toggleBlue(bool on) {
     colorMask.z = on ? 1.0f : 0.0f;
-    updateColors();
 }
 
 void Model::setColorMask(glm::vec3 colorMask) {
     this->colorMask = colorMask;
-    updateColors();
+}
+
+void Model::setPosition(glm::vec3 position) {
+    this->translation = position;
+}
+
+void Model::setScale(glm::vec3 scale) {
+    this->scale = scale;
 }

@@ -21,8 +21,14 @@ enum ShadingMode {
     normal = 2
 };
 
+enum LightMode {
+    point = 0,
+    spotlight = 1
+};
+
 class Light {
 private:
+    LightMode lightMode;
     std::string uniformName;
     unsigned int depthMapFBO;
     unsigned int depthMap;
@@ -32,19 +38,25 @@ private:
     glm::vec3 position;
     glm::vec3 color;
     glm::mat4 transformationMatrix;
-
-    void updateUniform();
-    void createDepthMap();
+    glm::vec3 direction;
+    float cutOff;
 
 public:
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
-    Light(GLuint shader, std::string uniformName, glm::vec3 position, glm::vec3 color);
+    Light(std::string uniformName, glm::vec3 position, glm::vec3 color);
+    void updateUniform(int shader);
     void setEnabled(bool);
     bool isEnabled() {return enabled;};
     ShadingMode getShadingMode();
+    LightMode getLightMode();
+    void setLightMode(LightMode lightMode);
     void setShadingMode(ShadingMode shadingMode);
-    void renderToDepthMap(std::vector<Model*> &models);
+    void renderToDepthMap(int shader, std::vector<Model*> &models);
+    unsigned int getDepthMap();
+    glm::vec3 getPosition();
+    bool createDepthMap();
+    void makeSpotlight(glm::vec3 direction, float cutoffAngle);
 };
 
 #endif //GRAPHICS_LIGHT_H

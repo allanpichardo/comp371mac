@@ -14,7 +14,6 @@
 #include <glm/glm.hpp>
 
 class Camera {
-    int uniformLocation = -1;
     float currentPitch = 0.0f;
     float currentYaw = 0.0f;
     float movementAmount = 0.3f;
@@ -22,13 +21,14 @@ class Camera {
     glm::vec3 direction;
     glm::vec3 up;
     glm::mat4 cameraMatrix;
+    glm::mat4 projection;
     
-    void updateUniform();
     void move(glm::vec3 vector);
     void rotate(float pitch, float yaw);
     
 public:
-    Camera(int shader, float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up);
+    Camera(float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up);
+    void updateUniform(int shader);
     glm::vec3 getPosition();
     void panLeft();
     void panRight();

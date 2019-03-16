@@ -13,42 +13,32 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-Camera::Camera(int shader, float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
-    int viewLocation = glGetUniformLocation(shader, "view");
-
-    this->uniformLocation = viewLocation;
+Camera::Camera(float aspectRatio, glm::vec3 position, glm::vec3 direction, glm::vec3 up) {
     this->position = position;
     this->direction = direction;
     this->up = up;
     this->currentPitch = 0.0f;
     this->currentYaw = 0.0f;
-
-    int projectionLocation = glGetUniformLocation(shader, "projection");
-    glm::mat4 projection = glm::perspective(90.0f, aspectRatio, 0.1f, 500.0f);
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
-    
-    updateUniform();
+    this->projection = glm::perspective(glm::radians(90.0f), aspectRatio, 0.1f, 500.0f);
 }
 
 glm::vec3 Camera::getPosition() {
     return position;
 }
 
-void Camera::updateUniform() {
+void Camera::updateUniform(int shader) {
     cameraMatrix = glm::lookAt(position, position + direction, up);
-    glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &cameraMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, &cameraMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, &projection[0][0]);
 }
 
 void Camera::move(glm::vec3 vector) {
     position += vector;
-    updateUniform();
 }
 
 void Camera::rotate(float pitch, float yaw) {
     direction.x += yaw;
     direction.y += pitch;
-    
-    updateUniform();
 }
 
 void Camera::panLeft(){
